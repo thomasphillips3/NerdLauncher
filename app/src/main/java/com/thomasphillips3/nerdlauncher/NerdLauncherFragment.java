@@ -1,8 +1,10 @@
 package com.thomasphillips3.nerdlauncher;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -41,7 +43,8 @@ public class NerdLauncherFragment extends Fragment {
 
     void setupAdapter() {
         Intent startupIntent = new Intent(Intent.ACTION_MAIN);
-        startupIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        startupIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         PackageManager pm = getActivity().getPackageManager();
         List<ResolveInfo> activities = pm.queryIntentActivities(startupIntent, 0);
@@ -60,20 +63,33 @@ public class NerdLauncherFragment extends Fragment {
         mRecyclerView.setAdapter(new ActivityAdapter(activities));
     }
 
-    private class ActivityHolder extends RecyclerView.ViewHolder {
+    private class ActivityHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
         private ResolveInfo mResolveInfo;
         private TextView mNameTextView;
 
         public ActivityHolder(View itemView) {
             super(itemView);
             mNameTextView = (TextView) itemView;
+            mNameTextView.setOnClickListener(this);
         }
 
         public void bindActivity(ResolveInfo resolveInfo) {
             mResolveInfo = resolveInfo;
             PackageManager pm = getActivity().getPackageManager();
             String appName = mResolveInfo.loadLabel(pm).toString();
+            Drawable appIcon = mResolveInfo.loadIcon(pm);
             mNameTextView.setText(appName);
+            mNameTextView.setCompoundDrawablesWithIntrinsicBounds(appIcon, null, null, null);
+        }
+
+        @Override
+        public void onClick(View v) {
+            ActivityInfo activityInfo = mResolveInfo.activityInfo;
+
+            Intent i = new Intent(Intent.ACTION_MAIN)
+                    .setClassName(activityInfo.applicationInfo.packageName, activityInfo.name);
+            startActivity(i);
         }
     }
 
